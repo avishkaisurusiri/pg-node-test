@@ -1,11 +1,19 @@
-import dotenv from "dotenv";
-dotenv.config();
 import express, { Request, Response } from "express";
 import cors from "cors";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 import pool from "./db";
+
+dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET is not set in .env");
+}
 
 app.use(cors());
 app.use(express.json());
@@ -41,9 +49,11 @@ app.post("/register", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Email already exists" });
     }
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const result = await pool.query(
       "INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role",
-      [name, email, password, role]
+      [name, email, hashedPassword, role]
     );
 
     res.status(201).json({
@@ -75,12 +85,25 @@ app.post("/login", async (req: Request, res: Response) => {
 
     const user = result.rows[0];
 
-    if (user.password !== password) {
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatch) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role
+      },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
     res.json({
       message: "Login successful",
+      token,
       user: {
         id: user.id,
         name: user.name,
