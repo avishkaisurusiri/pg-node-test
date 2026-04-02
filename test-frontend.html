@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frontend Test</title>
+</head>
+<body>
+  <h2>Register</h2>
+  <input id="regName" type="text" placeholder="Name" />
+  <input id="regEmail" type="email" placeholder="Email" />
+  <input id="regPassword" type="password" placeholder="Password" />
+  <button id="registerBtn">Register</button>
+
+  <h2>Login</h2>
+  <input id="loginEmail" type="email" placeholder="Email" />
+  <input id="loginPassword" type="password" placeholder="Password" />
+  <button id="loginBtn">Login</button>
+
+  <h3>Output</h3>
+  <pre id="output"></pre>
+
+  <script>
+    const output = document.getElementById("output");
+
+    document.getElementById("registerBtn").addEventListener("click", async () => {
+      const name = document.getElementById("regName").value;
+      const email = document.getElementById("regEmail").value;
+      const password = document.getElementById("regPassword").value;
+
+      try {
+        const response = await fetch("http://localhost:3000/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            password,
+            role: "user"
+          })
+        });
+
+        const data = await response.json();
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        output.textContent = "Register request failed";
+      }
+    });
+
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+
+      try {
+        const response = await fetch("http://localhost:3000/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email,
+            password
+          })
+        });
+
+        const data = await response.json();
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        output.textContent = "Login request failed";
+      }
+    });
+  </script>
+</body>
+</html>
